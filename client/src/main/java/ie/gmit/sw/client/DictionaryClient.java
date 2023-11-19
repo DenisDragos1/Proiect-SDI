@@ -3,11 +3,15 @@ package ie.gmit.sw.client;
 import org.example.DictionaryService;
 
 import java.rmi.Naming;
+import java.util.HashMap;
 import java.util.Map;
 
 public class DictionaryClient {
 
     private DictionaryService service;
+
+
+    private Map<String, String> dictionary; //  pentru a defini dicționarul
 
     public DictionaryClient() {
         try {
@@ -42,6 +46,22 @@ public Map<String, Object> add(String word, String definition) {
         e.printStackTrace();
         return null;
     }
+}
+
+//edit
+public Map<String, Object> edit(String word, String newDefinition) {
+    // Implementează logica pentru editarea unui cuvânt
+    // De exemplu, poți verifica dacă cuvântul există și apoi să-l editezi
+
+    Map<String, Object> response = new HashMap<>();
+    if (dictionary.containsKey(word)) {
+        dictionary.put(word, newDefinition);
+        response.put("message", "Word edited successfully.");
+    } else {
+        response.put("message", "Word not found for editing.");
+    }
+
+    return response;
 }
 
 

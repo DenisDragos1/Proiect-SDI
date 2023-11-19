@@ -81,7 +81,10 @@ public class CommandLineInterface {
                     break;
                 case 4:
                     System.out.print("Enter word to edit: ");
-                    // Implementează funcționalitatea de editare
+                    String editWord = scanner.nextLine();
+                    System.out.print("Enter new definition: ");
+                    String newDefinition = scanner.nextLine();
+                    requestPermissionAndExecuteOperation(editWord, newDefinition, "edit");
                     break;
                 case 5:
                     manageNodes();
@@ -130,8 +133,9 @@ public class CommandLineInterface {
             displayResponse1(client.add(word, definition));
         } else if (operation.equals("remove")) {
             displayResponse(client.remove(word));
-        } else {
-            // Implementează execuția operației de editare
+        }  else if (operation.equals("edit")) {
+            Map<String, Object> response = client.edit(word, definition);
+            displayResponse1(response);
         }
     }
 
