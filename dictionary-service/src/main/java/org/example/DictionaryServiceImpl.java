@@ -84,6 +84,21 @@ public class DictionaryServiceImpl extends UnicastRemoteObject implements Dictio
 
         return response;
     }
+    @Override
+    public Map<String, Object> edit(String word, String newDefinition) {
+        // Implementează logica pentru editarea unui cuvânt
+        // De exemplu, poți verifica dacă cuvântul există și apoi să-l editezi
+
+        Map<String, Object> response = new HashMap<>();
+        if (dictionary.containsKey(word)) {
+            dictionary.put(word, newDefinition);
+            response.put("message", "Word edited successfully.");
+        } else {
+            response.put("message", "Word not found for editing.");
+        }
+
+        return response;
+    }
 
 
     /**

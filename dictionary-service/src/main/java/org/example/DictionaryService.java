@@ -37,4 +37,6 @@ public interface DictionaryService extends Remote {
      * @throws RemoteException
      */
     public String remove(String word) throws RemoteException;
+
+    public Map<String, Object> edit(String word, String newDefinition);
 }

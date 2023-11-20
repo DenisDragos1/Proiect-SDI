@@ -11,7 +11,7 @@ public class DictionaryClient {
     private DictionaryService service;
 
 
-    private Map<String, String> dictionary; //  pentru a defini dicționarul
+    private Map<String, Object> dictionary; //  pentru a defini dicționarul
 
     public DictionaryClient() {
         try {
