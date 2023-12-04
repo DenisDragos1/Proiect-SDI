@@ -28,17 +28,28 @@ public interface DictionaryService extends Remote {
      */
 //    public String add(String word, String definition) throws RemoteException;
   //  public Map<String, Object> add(String word, String definition) throws RemoteException;
-    public Map<String, Object> add(String word, String definition) throws RemoteException;
+    public Map<String, Object> add(String word, String definition,String clientIp) throws RemoteException;
 
     /**
      * Remove the given word from the dictionary if it exists.
-     * @param word to remove from the dictionary.
+     * @param// word to remove from the dictionary.
      * @return a message to show the user.
      * @throws RemoteException
      */
-    public String remove(String word) throws RemoteException;
+    // Adaugă această metodă pentru a permite votarea.
+    public boolean requestVote(String clientIp, String operation) throws RemoteException;
+
+
+    // Adaugă această metodă pentru a verifica dacă un nod este pregătit.
+    boolean isReady() throws RemoteException;
+
+    public String remove(String word,String clientIp) throws RemoteException;
 
     //public Map<String, Object> edit(String word, String newDefinition);
-    Map<String, Object> edit(String word, String newDefinition) throws RemoteException;
+    Map<String, Object> edit(String word, String newDefinition,String clientIp) throws RemoteException;
 
+    //boolean requestVote(String clientIp, String operationId) throws RemoteException;
+    Map<String, Boolean> getVotes() throws RemoteException;
+    void startOperation(String operationId) throws RemoteException;
+    void endOperation(String operationId) throws RemoteException;
 }

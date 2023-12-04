@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.rmi.Naming;
 import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,18 +23,26 @@ public class ServiceSetup {
      * @param args
      * @throws Exception
      */
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args) throws Exception {
+        // Adresa IP și portul serverului RMI
+        String serverIp = "192.168.1.10"; // Adresa IP a serverului
+        int port = 1099; // Portul serverului RMI
+
+        // Construiește URL-ul pentru serviciu
+        String serviceURL = "rmi://" + serverIp + ":" + port + "/dictionaryService";
+
         Map<String, String> dictionary = parseDictionary();
 
-        // Create an instance of a DictionaryService.
+        // Crează o instanță a serviciului DictionaryService.
         DictionaryService ds = new DictionaryServiceImpl(dictionary);
 
-        // Start the RMI registry on port 1099 (Default port).
-        LocateRegistry.createRegistry(1099);
+        // Porniți registry RMI la portul specificat.
+        LocateRegistry.createRegistry(port);
 
-        // Bind the remote object to the registry.
-        // Assign it the human-readable name "dictionaryService".
-        Naming.rebind("dictionaryService", ds);
+        // Înregistrați obiectul remote în registry.
+        Naming.rebind(serviceURL, ds);
+
+        System.out.println("Service is ready at: " + serviceURL);
     }
 
     /*

@@ -1,118 +1,67 @@
 package org.example;
-
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * DictionaryServiceImpl is a Remote Object.
- * Extending UnicastRemoteObject allows this remote object to communicate with the server-side skeleton.
- * The server-side skeleton is the responsible for unmarshalling client requests on the server and marshalling responses.
- * The remote object is used for a remote method invocation.
- */
 public class DictionaryServiceImpl extends UnicastRemoteObject implements DictionaryService {
     private static final long serialVersionUID = 1L;
+    private Map<String, Boolean> votes = new ConcurrentHashMap<>();
+    private Set<String> activeOperations = new HashSet<>();
+    private Map<String, String> dictionary = new HashMap<>();
 
-    /*
-     * Use a HashMap to store the dictionary.
-     * The words are used as keys and the definitions are values.
-     * Looking up definitions using a key is an O(1) operation.
-     * Adding words to the dictionary is an O(1) operation.
-     */
-    private Map<String, String> dictionary = new HashMap<String, String>();
-
-    /**
-     * Default constructor for the DictionaryServiceImpl class.
-     * @param dictionary with words as keys and definitions as values.
-     * @throws RemoteException
-     */
     public DictionaryServiceImpl(Map<String, String> dictionary) throws RemoteException {
+        super();
         this.dictionary = dictionary;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public String lookup(String s) throws RemoteException {
         sleep();
-
-        // Convert string to uppercase as all the keys in the dictionary are uppercase.
         s = s.toUpperCase();
-
-        // Get the definition from the dictionary map.
         String definition = dictionary.get(s);
-
-        // If the word is not in the dictionary return a default message.
         if (definition == null) {
             definition = "String not found";
         }
-
         return definition;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-//    public String add(String word, String def) throws RemoteException {
-//        sleep();
-//
-//        word = word.toUpperCase();
-//
-//        String definition = dictionary.put(word, def);
-//
-//        if (definition == null) {
-//            return String.format("Successfully added '%s' to the dictionary.", word);
-//        } else {
-//            return String.format("Modified the definition for the word '%s' in the dictionary.", word);
-//        }
-//    }
-    public Map<String, Object> add(String word, String def) throws RemoteException {
+    @Override
+    public Map<String, Object> add(String word, String def,String clientIp) throws RemoteException {
         sleep();
-
         word = word.toUpperCase();
-
         Map<String, Object> response = new HashMap<>();
-
         if (dictionary.containsKey(word)) {
             response.put("message", String.format("Modified the definition for the word '%s' in the dictionary.", word));
         } else {
             response.put("message", String.format("Successfully added '%s' to the dictionary.", word));
         }
-
         dictionary.put(word, def);
-
         return response;
     }
-    
-    public Map<String, Object> edit(String word, String newDefinition) throws RemoteException {
+
+    @Override
+    public Map<String, Object> edit(String word, String newDefinition,String clientIp) throws RemoteException {
         sleep();
-
         word = word.toUpperCase();
-
         Map<String, Object> response = new HashMap<>();
-
         if (dictionary.containsKey(word)) {
             dictionary.put(word, newDefinition);
             response.put("message", String.format("Successfully edited the definition for the word '%s' in the dictionary.", word));
         } else {
             response.put("message", String.format("Could not find the word '%s' in the dictionary for editing.", word));
         }
-
         return response;
     }
 
-
-    /**
-     * {@inheritDoc}
-     */
-    public String remove(String word) throws RemoteException {
+    @Override
+    public String remove(String word,String clientIp) throws RemoteException {
         sleep();
-
         word = word.toUpperCase();
-
         String definition = dictionary.remove(word);
-
         if (definition != null) {
             return String.format("Successfully removed '%s' from the dictionary.", word);
         } else {
@@ -120,12 +69,60 @@ public class DictionaryServiceImpl extends UnicastRemoteObject implements Dictio
         }
     }
 
+//    @Override
+//    public boolean requestVote(String clientIp, String operation) throws RemoteException {
+//        // Simulează logica de votare
+//        System.out.println("Received vote request from " + clientIp + " for operation: " + operation);
+//        // Returnează true dacă este de acord, altfel false
+//        // Poți adăuga o logica mai avansată aici
+//        return true; // Modifică logica în funcție de cerințele tale.
+//    }
+@Override
+public boolean requestVote(String clientIp, String operationId) throws RemoteException {
+    // sincronizare adaugată aici...
+    synchronized (this) {
+        if (activeOperations.contains(operationId)) {
+            return false;
+        }
 
-    /*
-     * Before performing any operation on the dictionary, the
-     * thread should be put to sleep for a time to slow the
-     * service down and simulate a real asynchronous service.
-     */
+        System.out.println("Received vote request from " + clientIp + " for operation: " + operationId);
+        boolean vote = true;
+        votes.put(clientIp + ":" + operationId, vote);
+        return vote;
+    }
+}
+
+    @Override
+    public Map<String, Boolean> getVotes() throws RemoteException {
+        // sincronizare adaugată aici...
+        synchronized (this) {
+            return new HashMap<>(votes);
+        }
+    }
+
+    @Override
+    public void startOperation(String operationId) throws RemoteException {
+        // sincronizare adaugată aici...
+        synchronized (this) {
+            activeOperations.add(operationId);
+        }
+    }
+
+    @Override
+    public void endOperation(String operationId) throws RemoteException {
+        // sincronizare adaugată aici...
+        synchronized (this) {
+            activeOperations.remove(operationId);
+        }
+    }
+
+
+    @Override
+    public boolean isReady() throws RemoteException {
+        // Implementează logica pentru a verifica dacă serviciul este pregătit
+        return true; // Modifică logica în funcție de cerințele tale.
+    }
+
     private void sleep() {
         try {
             Thread.sleep(1000);

@@ -4,10 +4,9 @@ import ie.gmit.sw.client.DictionaryClient;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class CommandLineInterface {
     private boolean authenticated = false;
@@ -16,28 +15,51 @@ public class CommandLineInterface {
     private Scanner scanner;
 
     public CommandLineInterface() {
-        client = new DictionaryClient();
-        scanner = new Scanner(System.in);
-        nodes = new ArrayList<>();
+        try {
+            // Adaugă adresa IP și portul serverului în constructorul DictionaryClient
+            client = new DictionaryClient("192.168.1.10", 1099);
+            scanner = new Scanner(System.in);
+            nodes = new ArrayList<>();
 
-        // La prima rulare, inițializați lista de noduri
-        initializeNodes();
+            // La prima rulare, inițializați lista de noduri
+            //initializeNodes();
+            // Adaugă adresa IP locală în lista de noduri
+            try {
+                String localIp = InetAddress.getLocalHost().getHostAddress();
+                nodes.add(localIp);
+                System.out.println("Local IP Address added: " + localIp);
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        // Pornește un fir de execuție pentru afișarea continuă a listei de noduri
+//        Thread nodeDisplayThread = new Thread(new NodeDisplayTask());
+//        nodeDisplayThread.start();
+    }
+    // Clasa Task pentru firul de execuție care afișează continuu lista de noduri
+    private class NodeDisplayTask implements Runnable {
+        @Override
+        public void run() {
+            while (true) {
+                displayNodes();
+                try {
+                    // Așteaptă 5 secunde înainte de a actualiza și afișa din nou lista
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
+    private void displayNodes() {
+        System.out.println("Current Nodes: " + nodes);
+    }
     public void authenticateUser() {
         // Implementați autentificarea utilizatorului
         // Actualizați authenticated în funcție de rezultatul autentificării
-    }
-
-    public void initializeNodes() {
-        try {
-            // Adăugați adresa IP a calculatorului curent în lista de noduri
-            String localIp = InetAddress.getLocalHost().getHostAddress();
-            nodes.add(localIp);
-            System.out.println("Adresa IP locală a fost adăugată: " + localIp);
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
     }
 
     public void start() {
@@ -103,9 +125,18 @@ public class CommandLineInterface {
 
         // Solicită permisiunea de la fiecare nod
         int permissionCount = 0;
+
+        // Pregătește un map pentru a stoca voturile de la noduri
+        Map<String, Boolean> votes = new HashMap<>();
+
         for (String node : nodes) {
             System.out.print("Node " + node + ": ");
-            if (requestPermissionFromNode(node)) {
+
+            // Afișează mesajul la nivelul CLI și permite utilizatorului să voteze
+            boolean vote = requestPermissionFromNode(node, operation);
+            votes.put(node, vote);
+
+            if (vote) {
                 permissionCount++;
             }
         }
@@ -118,24 +149,73 @@ public class CommandLineInterface {
         } else {
             System.out.println("Operația a fost respinsă de majoritatea nodurilor. Anulând...");
         }
+
+        // Afișează voturile la nivelul CLI
+        displayVotes(votes);
+    }
+    private void displayVotes(Map<String, Boolean> votes) {
+        System.out.println("Votes received from nodes:");
+        for (Map.Entry<String, Boolean> entry : votes.entrySet()) {
+            System.out.println("Node " + entry.getKey() + ": " + (entry.getValue() ? "agreed" : "disagreed"));
+        }
     }
 
-    private boolean requestPermissionFromNode(String node) {
+    private boolean requestPermissionFromNode(String node, String operation) {
         // Simulează solicitarea de permisiune de la nod
-        System.out.print("Do you agree? (yes/no): ");
-        String response = scanner.nextLine();
-        return response.equalsIgnoreCase("yes");
+        try {
+            System.out.print("Do you agree? (yes/no): ");
+            String response = scanner.nextLine();
+            boolean vote = response.equalsIgnoreCase("yes");
+            System.out.println("Vote from Node " + node + ": " + (vote ? "agreed" : "disagreed"));
+            return vote;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
+
+
+
+
+    //    private boolean requestPermissionFromNode(String node) {
+//        // Simulează solicitarea de permisiune de la nod
+//        try {
+//            boolean vote = client.requestVote(node);
+//            System.out.print("Do you agree? (yes/no): ");
+//            String response = scanner.nextLine();
+//            return vote && response.equalsIgnoreCase("yes");
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return false;
+//        }
+//    }
+//private boolean requestPermissionFromNode(String node) {
+//    // Simulează solicitarea de permisiune de la nod
+//    try {
+//        boolean vote = client.requestVote(node, "operation");
+//        System.out.println("Received vote from " + node + ": " + (vote ? "agreed" : "rejected"));
+//        return vote;
+//    } catch (Exception e) {
+//        e.printStackTrace();
+//        return false;
+//    }
+//}
+
 
     private void executeOperation(String word, String definition, String operation) {
         // Implementează execuția operației
-        if (operation.equals("add")) {
-            displayResponse1(client.add(word, definition));
-        } else if (operation.equals("remove")) {
-            displayResponse(client.remove(word));
-        }  else if (operation.equals("edit")) {
-            Map<String, Object> response = client.edit(word, definition);
-            displayResponse1(response);
+        try {
+            if (operation.equals("add")) {
+                Map<String, Object> response = client.add(word, definition);
+                displayResponse1(response);
+            } else if (operation.equals("remove")) {
+                displayResponse(client.remove(word));
+            } else if (operation.equals("edit")) {
+                Map<String, Object> response = client.edit(word, definition);
+                displayResponse1(response);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -161,6 +241,7 @@ public class CommandLineInterface {
                 System.out.println("Invalid choice. Please try again.");
         }
     }
+
 
     private void addNode() {
         try {
