@@ -17,7 +17,7 @@ public class CommandLineInterface {
     public CommandLineInterface() {
         try {
             // Adaugă adresa IP și portul serverului în constructorul DictionaryClient
-            client = new DictionaryClient("192.168.1.10", 1099);
+            client = new DictionaryClient("192.168.37.217", 1099);
             scanner = new Scanner(System.in);
             nodes = new ArrayList<>();
 
@@ -36,7 +36,7 @@ public class CommandLineInterface {
         }
         // Pornește un fir de execuție pentru afișarea continuă a listei de noduri
 //        Thread nodeDisplayThread = new Thread(new NodeDisplayTask());
-//        nodeDisplayThread.start();
+     //   nodeDisplayThread.start();
     }
     // Clasa Task pentru firul de execuție care afișează continuu lista de noduri
     private class NodeDisplayTask implements Runnable {
