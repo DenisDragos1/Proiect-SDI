@@ -16,7 +16,7 @@ public class CommandLineInterface {
 
     public CommandLineInterface() {
         try {
-            // Adaugă adresa IP și portul serverului în constructorul DictionaryClient
+            //  Adaugă adresa IP și portul serverului în constructorul DictionaryClient
             client = new DictionaryClient("192.168.37.217", 1099);
             scanner = new Scanner(System.in);
             nodes = new ArrayList<>();
