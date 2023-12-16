@@ -20,6 +20,7 @@ public class DictionaryServiceImpl extends UnicastRemoteObject implements Dictio
 
     @Override
     public String lookup(String s) throws RemoteException {
+
         sleep();
         s = s.toUpperCase();
         String definition = dictionary.get(s);

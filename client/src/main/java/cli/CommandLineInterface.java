@@ -169,7 +169,7 @@ public class CommandLineInterface {
 //        // Afișează voturile la nivelul CLI
 //        displayVotes(votes);
 //    }
-private void requestPermissionAndExecuteOperation(String word, String definition, String operation) {
+private void requestPermissionAndExecuteOperation( String word, String definition, String operation) {
     System.out.println("Requesting permission from nodes...");
 
     try {

@@ -43,6 +43,7 @@ public interface DictionaryService extends Remote {
     // Adaugă această metodă pentru a verifica dacă un nod este pregătit.
     boolean isReady() throws RemoteException;
 
+
     public String remove(String word,String clientIp) throws RemoteException;
 
     //public Map<String, Object> edit(String word, String newDefinition);

@@ -118,5 +118,6 @@ public class DictionaryClient {
     public void close() {
         // Implementează logica de închidere a clientului aici (dacă este necesar)
         scanner.close();
+
     }
 }
