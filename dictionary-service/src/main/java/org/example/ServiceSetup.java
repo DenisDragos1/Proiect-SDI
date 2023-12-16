@@ -25,7 +25,7 @@ public class ServiceSetup {
      */
     public static void main(String[] args) throws Exception {
         // Adresa IP și portul serverului RMI
-        String serverIp = "192.168.37.217";   // Adresa IP a serverului
+        String serverIp = "192.168.1.2";   // Adresa IP a serverului
         int port = 1099; // Portul serverului RMI
 
         // Construiește URL-ul pentru serviciu

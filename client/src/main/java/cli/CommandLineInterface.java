@@ -13,11 +13,14 @@ public class CommandLineInterface {
     private List<String> nodes;  // Lista de noduri în sistem
     private DictionaryClient client;
     private Scanner scanner;
+    private String currentServerIp = "192.168.1.2";  // Adresa IP a serverului curent
+
 
     public CommandLineInterface() {
         try {
             //  Adaugă adresa IP și portul serverului în constructorul DictionaryClient
-            client = new DictionaryClient("192.168.37.217", 1099);
+            //client = new DictionaryClient("192.168.31.10", 1099);
+            client = new DictionaryClient(currentServerIp, 1099);
             scanner = new Scanner(System.in);
             nodes = new ArrayList<>();
 
@@ -53,6 +56,15 @@ public class CommandLineInterface {
             }
         }
     }
+    private void switchServer() {
+        // Actualizează adresa IP a serverului curent (poate fi extins pentru a detecta serverul disponibil)
+        currentServerIp = "192.168.31.11";
+        System.out.println("Switching to server: " + currentServerIp);
+
+        // Actualizează clientul cu noua adresă IP a serverului
+        client.updateServer(currentServerIp);
+    }
+
 
     private void displayNodes() {
         System.out.println("Current Nodes: " + nodes);
@@ -78,7 +90,8 @@ public class CommandLineInterface {
             System.out.println("3. Remove");
             System.out.println("4. Edit");
             System.out.println("5. Manage Nodes");
-            System.out.println("6. Exit");
+            System.out.println("6. Adauga 1000 perechi chei valoare automat(fara confirmare)");
+            System.out.println("7. Exit");
 
             int choice = scanner.nextInt();
             scanner.nextLine(); // Consumă newline
@@ -112,6 +125,9 @@ public class CommandLineInterface {
                     manageNodes();
                     break;
                 case 6:
+                    System.out.print("Adauga 1000 perechi chei valoare automat(fara confirmare)");
+                    break;
+                case 7:
                     client.close();
                     System.exit(0);
                 default:
@@ -120,20 +136,52 @@ public class CommandLineInterface {
         }
     }
 
-    private void requestPermissionAndExecuteOperation(String word, String definition, String operation) {
-        System.out.println("Requesting permission from nodes...");
+//    private void requestPermissionAndExecuteOperation(String word, String definition, String operation) {
+//        System.out.println("Requesting permission from nodes...");
+//
+//        // Solicită permisiunea de la fiecare nod
+//        int permissionCount = 0;
+//
+//        // Pregătește un map pentru a stoca voturile de la noduri
+//        Map<String, Boolean> votes = new HashMap<>();
+//
+//        for (String node : nodes) {
+//            System.out.print("Node " + node + ": ");
+//
+//            // Afișează mesajul la nivelul CLI și permite utilizatorului să voteze
+//            boolean vote = requestPermissionFromNode(node, operation);
+//            votes.put(node, vote);
+//
+//            if (vote) {
+//                permissionCount++;
+//            }
+//        }
+//
+//        // Verifică majoritatea voturilor
+//        if (permissionCount > nodes.size() / 2) {
+//            System.out.println("Majoritatea nodurilor au acordat permisiunea. Executând operația...");
+//            // Execută operația
+//            executeOperation(word, definition, operation);
+//        } else {
+//            System.out.println("Operația a fost respinsă de majoritatea nodurilor. Anulând...");
+//        }
+//
+//        // Afișează voturile la nivelul CLI
+//        displayVotes(votes);
+//    }
+private void requestPermissionAndExecuteOperation(String word, String definition, String operation) {
+    System.out.println("Requesting permission from nodes...");
 
+    try {
         // Solicită permisiunea de la fiecare nod
         int permissionCount = 0;
-
-        // Pregătește un map pentru a stoca voturile de la noduri
         Map<String, Boolean> votes = new HashMap<>();
 
         for (String node : nodes) {
             System.out.print("Node " + node + ": ");
 
             // Afișează mesajul la nivelul CLI și permite utilizatorului să voteze
-            boolean vote = requestPermissionFromNode(node, operation);
+            boolean vote = client.requestPermissionFromNode(node, operation);
             votes.put(node, vote);
 
             if (vote) {
@@ -143,16 +191,24 @@ public class CommandLineInterface {
 
         // Verifică majoritatea voturilor
         if (permissionCount > nodes.size() / 2) {
-            System.out.println("Majoritatea nodurilor au acordat permisiunea. Executând operația...");
+            System.out.println("Majority of nodes have granted permission. Executing operation...");
             // Execută operația
             executeOperation(word, definition, operation);
         } else {
-            System.out.println("Operația a fost respinsă de majoritatea nodurilor. Anulând...");
+            System.out.println("Operation rejected by the majority of nodes. Cancelling...");
+            // În cazul în care majoritatea nodurilor nu au acordat permisiunea, comută la alt server
+            switchServer();
         }
 
         // Afișează voturile la nivelul CLI
         displayVotes(votes);
+    } catch (Exception e) {
+        e.printStackTrace();
+        // În cazul în care apare o excepție, comută la alt server
+        switchServer();
     }
+}
+
     private void displayVotes(Map<String, Boolean> votes) {
         System.out.println("Votes received from nodes:");
         for (Map.Entry<String, Boolean> entry : votes.entrySet()) {

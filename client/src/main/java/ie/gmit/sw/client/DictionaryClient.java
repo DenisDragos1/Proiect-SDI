@@ -26,7 +26,25 @@ public class DictionaryClient {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
     }
+    public boolean requestPermissionFromNode(String node, String operation) {
+        try {
+            return service.requestVote(clientIp, operation);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    public void updateServer(String newServerIp) {
+        try {
+            service = (DictionaryService) Naming.lookup("rmi://" + newServerIp + ":1099/dictionaryService");
+            System.out.println("Server updated to: " + newServerIp);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public String lookup(String query) {
         try {
