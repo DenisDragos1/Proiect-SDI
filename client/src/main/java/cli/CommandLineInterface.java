@@ -58,7 +58,7 @@ public class CommandLineInterface {
     }
     private void switchServer() {
         // Actualizează adresa IP a serverului curent (poate fi extins pentru a detecta serverul disponibil)
-        currentServerIp = "192.168.31.11";
+        currentServerIp = "192.168.1.17";
         System.out.println("Switching to server: " + currentServerIp);
 
         // Actualizează clientul cu noua adresă IP a serverului
@@ -125,7 +125,12 @@ public class CommandLineInterface {
                     manageNodes();
                     break;
                 case 6:
-                    System.out.print("Adauga 1000 perechi chei valoare automat(fara confirmare)");
+                    // Adaugă 1000 perechi cheie-valoare automat
+                    for (int i = 0; i < 1000; i++) {
+                        String key = "Key" + i;
+                        String value = "Value" + i;
+                        requestPermissionAndExecuteOperation(key, value, "add");
+                    }
                     break;
                 case 7:
                     client.close();
