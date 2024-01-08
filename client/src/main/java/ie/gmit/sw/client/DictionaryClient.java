@@ -5,9 +5,7 @@ import org.example.DictionaryService;
 import java.net.InetAddress;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DictionaryClient {
@@ -23,11 +21,22 @@ public class DictionaryClient {
             service = (DictionaryService) Naming.lookup("rmi://" + serverIp + ":" + port + "/dictionaryService");
             scanner = new Scanner(System.in);
             clientIp = InetAddress.getLocalHost().getHostAddress();
+
+            registerNode(clientIp);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
 
     }
+    public void registerNode(String clientIp) {
+        try {
+            service.registerNode(clientIp);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
     public boolean requestPermissionFromNode(String node, String operation) {
         try {
             return service.requestVote(clientIp, operation);
@@ -56,6 +65,15 @@ public class DictionaryClient {
     }
 
     public Map<String, Object> add(String word, String definition) {
+        try {
+            return service.add(word, definition, clientIp);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public Map<String, Object> add1(String word, String definition) {
         try {
             return service.add(word, definition, clientIp);
         } catch (RemoteException e) {
@@ -120,4 +138,13 @@ public class DictionaryClient {
         scanner.close();
 
     }
+    public List<String> getConnectedNodes() {
+        try {
+            return service.getConnectedNodes();
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
 }

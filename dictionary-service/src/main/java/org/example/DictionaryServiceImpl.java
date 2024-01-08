@@ -1,10 +1,7 @@
 package org.example;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DictionaryServiceImpl extends UnicastRemoteObject implements DictionaryService {
@@ -43,6 +40,48 @@ public class DictionaryServiceImpl extends UnicastRemoteObject implements Dictio
         dictionary.put(word, def);
         return response;
     }
+    @Override
+    public Map<String, Object> add1(String word, String def,String clientIp) throws RemoteException {
+        sleep();
+        word = word.toUpperCase();
+        Map<String, Object> response = new HashMap<>();
+        if (dictionary.containsKey(word)) {
+            response.put("message", String.format("Modified the definition for the word '%s' in the dictionary.", word));
+        } else {
+            response.put("message", String.format("Successfully added '%s' to the dictionary.", word));
+        }
+        dictionary.put(word, def);
+        return response;
+    }
+    private Set<String> connectedNodes = new HashSet<>();
+    @Override
+    public void startOperation(String operationId, String clientIp) throws RemoteException {
+        synchronized (this) {
+            activeOperations.add(operationId);
+            connectedNodes.add(clientIp);
+        }
+    }
+    @Override
+    public void registerNode(String clientIp) throws RemoteException {
+        synchronized (this) {
+            connectedNodes.add(clientIp);
+        }
+    }
+
+    @Override
+    public List<String> getConnectedNodes() throws RemoteException {
+        synchronized (this) {
+            return new ArrayList<>(connectedNodes);
+        }
+    }
+    @Override
+    public void endOperation(String operationId, String clientIp) throws RemoteException {
+        synchronized (this) {
+            activeOperations.remove(operationId);
+            connectedNodes.remove(clientIp);
+        }
+    }
+
 
     @Override
     public Map<String, Object> edit(String word, String newDefinition,String clientIp) throws RemoteException {
@@ -70,7 +109,7 @@ public class DictionaryServiceImpl extends UnicastRemoteObject implements Dictio
         }
     }
 
-//    @Override
+    //    @Override
 //    public boolean requestVote(String clientIp, String operation) throws RemoteException {
 //        // Simulează logica de votare
 //        System.out.println("Received vote request from " + clientIp + " for operation: " + operation);
@@ -78,20 +117,20 @@ public class DictionaryServiceImpl extends UnicastRemoteObject implements Dictio
 //        // Poți adăuga o logica mai avansată aici
 //        return true; // Modifică logica în funcție de cerințele tale.
 //    }
-@Override
-public boolean requestVote(String clientIp, String operationId) throws RemoteException {
-    // sincronizare adaugată aici...
-    synchronized (this) {
-        if (activeOperations.contains(operationId)) {
-            return false;
-        }
+    @Override
+    public boolean requestVote(String clientIp, String operationId) throws RemoteException {
+        // sincronizare adaugată aici...
+        synchronized (this) {
+            if (activeOperations.contains(operationId)) {
+                return false;
+            }
 
-        System.out.println("Received vote request from " + clientIp + " for operation: " + operationId);
-        boolean vote = true;
-        votes.put(clientIp + ":" + operationId, vote);
-        return vote;
+            System.out.println("Received vote request from " + clientIp + " for operation: " + operationId);
+            boolean vote = true;
+            votes.put(clientIp + ":" + operationId, vote);
+            return vote;
+        }
     }
-}
 
     @Override
     public Map<String, Boolean> getVotes() throws RemoteException {

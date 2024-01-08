@@ -2,6 +2,7 @@ package org.example;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -18,6 +19,7 @@ public interface DictionaryService extends Remote {
      * @throws RemoteException
      */
     public String lookup(String s) throws RemoteException;
+    public Map<String, Object> add1(String word, String def,String clientIp) throws RemoteException ;
 
     /**
      * Add the word and definition to the dictionary if it doesn't exist. If it exists, update the definition.
@@ -27,7 +29,7 @@ public interface DictionaryService extends Remote {
      * @throws RemoteException
      */
 //    public String add(String word, String definition) throws RemoteException;
-  //  public Map<String, Object> add(String word, String definition) throws RemoteException;
+    //  public Map<String, Object> add(String word, String definition) throws RemoteException;
     public Map<String, Object> add(String word, String definition,String clientIp) throws RemoteException;
 
     /**
@@ -37,8 +39,13 @@ public interface DictionaryService extends Remote {
      * @throws RemoteException
      */
     // Adaugă această metodă pentru a permite votarea.
-    public boolean requestVote(String clientIp, String operation) throws RemoteException;
+    public void registerNode(String clientIp) throws RemoteException;
 
+    public boolean requestVote(String clientIp, String operation) throws RemoteException;
+    public List<String> getConnectedNodes() throws RemoteException;
+    public void startOperation(String operationId, String clientIp) throws RemoteException ;
+
+    public void endOperation(String operationId, String clientIp) throws RemoteException ;
 
     // Adaugă această metodă pentru a verifica dacă un nod este pregătit.
     boolean isReady() throws RemoteException;

@@ -4,6 +4,7 @@ import ie.gmit.sw.client.DictionaryClient;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.rmi.RemoteException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -13,7 +14,7 @@ public class CommandLineInterface {
     private List<String> nodes;  // Lista de noduri în sistem
     private DictionaryClient client;
     private Scanner scanner;
-    private String currentServerIp = "192.168.1.2";  // Adresa IP a serverului curent
+    private String currentServerIp = "192.168.1.4";  // Adresa IP a serverului curent
 
 
     public CommandLineInterface() {
@@ -37,10 +38,16 @@ public class CommandLineInterface {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        addNode();
+
         // Pornește un fir de execuție pentru afișarea continuă a listei de noduri
 //        Thread nodeDisplayThread = new Thread(new NodeDisplayTask());
-     //   nodeDisplayThread.start();
+        //   nodeDisplayThread.start();
     }
+
+
+
+
     // Clasa Task pentru firul de execuție care afișează continuu lista de noduri
     private class NodeDisplayTask implements Runnable {
         @Override
@@ -129,7 +136,7 @@ public class CommandLineInterface {
                     for (int i = 0; i < 1000; i++) {
                         String key = "Key" + i;
                         String value = "Value" + i;
-                        requestPermissionAndExecuteOperation(key, value, "add");
+                        requestPermissionAndExecuteOperation1(key, value, "add1");
                     }
                     break;
                 case 7:
@@ -140,8 +147,24 @@ public class CommandLineInterface {
             }
         }
     }
+    private void addNode() {
+        try {
+            // Adaugă adresa IP a calculatorului curent în lista de noduri
+            String localIp = InetAddress.getLocalHost().getHostAddress();
+            nodes.add(localIp);
+            System.out.println("Node added: " + localIp);
 
-//    private void requestPermissionAndExecuteOperation(String word, String definition, String operation) {
+            // Actualizează lista de noduri din client
+            nodes = client.getConnectedNodes();
+            displayNodes();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+    //    private void requestPermissionAndExecuteOperation(String word, String definition, String operation) {
 //        System.out.println("Requesting permission from nodes...");
 //
 //        // Solicită permisiunea de la fiecare nod
@@ -174,45 +197,84 @@ public class CommandLineInterface {
 //        // Afișează voturile la nivelul CLI
 //        displayVotes(votes);
 //    }
-private void requestPermissionAndExecuteOperation( String word, String definition, String operation) {
-    System.out.println("Requesting permission from nodes...");
+    private void requestPermissionAndExecuteOperation1( String word, String definition, String operation) {
+        System.out.println("Requesting permission from nodes...");
 
-    try {
-        // Solicită permisiunea de la fiecare nod
-        int permissionCount = 0;
-        Map<String, Boolean> votes = new HashMap<>();
+        try {
+            // Solicită permisiunea de la fiecare nod
+            int permissionCount = 0;
+            Map<String, Boolean> votes = new HashMap<>();
 
-        for (String node : nodes) {
-            System.out.print("Node " + node + ": ");
+            for (String node : nodes) {
+                System.out.print("Node " + node + ": ");
 
-            // Afișează mesajul la nivelul CLI și permite utilizatorului să voteze
-            boolean vote = client.requestPermissionFromNode(node, operation);
-            votes.put(node, vote);
+                // Afișează mesajul la nivelul CLI și permite utilizatorului să voteze
+                boolean vote = client.requestPermissionFromNode(node, operation);
+                votes.put(node, vote);
 
-            if (vote) {
-                permissionCount++;
+                if (vote) {
+                    permissionCount++;
+                }
             }
-        }
 
-        // Verifică majoritatea voturilor
-        if (permissionCount > nodes.size() / 2) {
-            System.out.println("Majority of nodes have granted permission. Executing operation...");
-            // Execută operația
-            executeOperation(word, definition, operation);
-        } else {
-            System.out.println("Operation rejected by the majority of nodes. Cancelling...");
-            // În cazul în care majoritatea nodurilor nu au acordat permisiunea, comută la alt server
+            // Verifică majoritatea voturilor
+            if (permissionCount > nodes.size() / 2) {
+                System.out.println("Majority of nodes have granted permission. Executing operation...");
+                // Execută operația
+                executeOperation(word, definition, operation);
+            } else {
+                System.out.println("Operation rejected by the majority of nodes. Cancelling...");
+                // În cazul în care majoritatea nodurilor nu au acordat permisiunea, comută la alt server
+                switchServer();
+            }
+
+            // Afișează voturile la nivelul CLI
+            displayVotes(votes);
+        } catch (Exception e) {
+            e.printStackTrace();
+            // În cazul în care apare o excepție, comută la alt server
             switchServer();
         }
-
-        // Afișează voturile la nivelul CLI
-        displayVotes(votes);
-    } catch (Exception e) {
-        e.printStackTrace();
-        // În cazul în care apare o excepție, comută la alt server
-        switchServer();
     }
-}
+    private void requestPermissionAndExecuteOperation( String word, String definition, String operation) {
+        System.out.println("Requesting permission from nodes...");
+
+        try {
+            // Solicită permisiunea de la fiecare nod
+            int permissionCount = 0;
+            Map<String, Boolean> votes = new HashMap<>();
+
+            for (String node : nodes) {
+                System.out.print("Node " + node + ": ");
+
+                // Afișează mesajul la nivelul CLI și permite utilizatorului să voteze
+                boolean vote = client.requestPermissionFromNode(node, operation);
+                votes.put(node, vote);
+
+                if (vote) {
+                    permissionCount++;
+                }
+            }
+
+            // Verifică majoritatea voturilor
+            if (permissionCount > nodes.size() / 2) {
+                System.out.println("Majority of nodes have granted permission. Executing operation...");
+                // Execută operația
+                executeOperation(word, definition, operation);
+            } else {
+                System.out.println("Operation rejected by the majority of nodes. Cancelling...");
+                // În cazul în care majoritatea nodurilor nu au acordat permisiunea, comută la alt server
+                switchServer();
+            }
+
+            // Afișează voturile la nivelul CLI
+            displayVotes(votes);
+        } catch (Exception e) {
+            e.printStackTrace();
+            // În cazul în care apare o excepție, comută la alt server
+            switchServer();
+        }
+    }
 
     private void displayVotes(Map<String, Boolean> votes) {
         System.out.println("Votes received from nodes:");
@@ -266,6 +328,7 @@ private void requestPermissionAndExecuteOperation( String word, String definitio
     private void executeOperation(String word, String definition, String operation) {
         // Implementează execuția operației
         try {
+
             if (operation.equals("add")) {
                 Map<String, Object> response = client.add(word, definition);
                 displayResponse1(response);
@@ -274,6 +337,11 @@ private void requestPermissionAndExecuteOperation( String word, String definitio
             } else if (operation.equals("edit")) {
                 Map<String, Object> response = client.edit(word, definition);
                 displayResponse1(response);
+            }
+            else if(operation.equals("add1")){
+                Map<String, Object> response = client.add1(word, definition);
+                displayResponse1(response);
+
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -304,16 +372,16 @@ private void requestPermissionAndExecuteOperation( String word, String definitio
     }
 
 
-    private void addNode() {
-        try {
-            // Adaugă adresa IP a calculatorului curent în lista de noduri
-            String localIp = InetAddress.getLocalHost().getHostAddress();
-            nodes.add(localIp);
-            System.out.println("Node added: " + localIp);
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
-    }
+//    private void addNode() {
+//        try {
+//            // Adaugă adresa IP a calculatorului curent în lista de noduri
+//            String localIp = InetAddress.getLocalHost().getHostAddress();
+//            nodes.add(localIp);
+//            System.out.println("Node added: " + localIp);
+//        } catch (UnknownHostException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     private void removeNode() {
         // Implementează funcționalitatea de eliminare a unui nod

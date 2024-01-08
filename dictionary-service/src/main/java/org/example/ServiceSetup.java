@@ -4,10 +4,12 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.rmi.Naming;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,10 +25,11 @@ public class ServiceSetup {
      * @param args
      * @throws Exception
      */
+
     public static void main(String[] args) throws Exception {
 
         // Adresa IP și portul serverului RMI
-        String serverIp = "192.168.1.2";   // Adresa IP a serverului
+        String serverIp = "192.168.1.4";   // Adresa IP a serverului
         int port = 1099; // Portul serverului RMI
 
         // Construiește URL-ul pentru serviciu
@@ -42,9 +45,37 @@ public class ServiceSetup {
 
         // Înregistrați obiectul remote în registry.
         Naming.rebind(serviceURL, ds);
-
+        displayConnectedNodes(ds);
         System.out.println("Service is ready at: " + serviceURL);
     }
+
+    private static void waitForNodeRegistration(DictionaryService ds) {
+        // Așteaptă înregistrarea nodurilor la server
+        System.out.println("Waiting for nodes to register...");
+        try {
+            while (ds.getConnectedNodes().isEmpty()) {
+                Thread.sleep(1000); // așteaptă 1 secundă și verifică din nou
+            }
+            System.out.println("Nodes registered: " + ds.getConnectedNodes());
+        } catch (RemoteException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+    // Adaugă această metodă în ServiceSetup
+    private static void displayConnectedNodes(DictionaryService ds) {
+        try {
+            // Obține și afișează lista de noduri conectate
+            List<String> connectedNodes = ds.getConnectedNodes();
+            System.out.println("Connected Nodes: " + connectedNodes);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+
 
     /*
      * Parse the dictionary file, which is in TXT format, to a Map.
