@@ -14,7 +14,7 @@ public class CommandLineInterface {
     private List<String> nodes;  // Lista de noduri în sistem
     private DictionaryClient client;
     private Scanner scanner;
-    private String currentServerIp = "192.168.37.1";  // Adresa IP a serverului curent
+    private String currentServerIp = "192.168.37.94";  // Adresa IP a serverului curent
 
 
     public CommandLineInterface() {
