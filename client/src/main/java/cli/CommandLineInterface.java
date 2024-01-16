@@ -136,7 +136,7 @@ public class CommandLineInterface {
 //    }
 private void switchServer() {
     // Actualizează adresa IP a serverului curent (poate fi extins pentru a detecta serverul disponibil)
-    currentServerIp = "192.168.1.5";
+    currentServerIp = "192.168.37.135";
     System.out.println("Switching to server: " + currentServerIp);
 
     // Actualizează clientul cu noua adresă IP a serverului

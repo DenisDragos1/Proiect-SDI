@@ -27,7 +27,7 @@ public class ServiceSetup {
      * @throws Exception
      */
     public static void main(String[] args) {
-        String[] serverIps = {"192.168.37.141", "192.168.1.5"};
+        String[] serverIps = {"192.168.37.141", "192.168.37.135"};
         int port = 1099;
 
         // Construiește URL-ul pentru serviciu pentru primul server
