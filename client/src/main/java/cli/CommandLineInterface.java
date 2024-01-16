@@ -2,7 +2,9 @@ package cli;
 
 import ie.gmit.sw.client.DictionaryClient;
 
+import java.io.IOException;
 import java.net.InetAddress;
+import java.net.Socket;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.util.*;
@@ -14,11 +16,12 @@ public class CommandLineInterface {
     private List<String> nodes;  // Lista de noduri în sistem
     private DictionaryClient client;
     private Scanner scanner;
-    private String currentServerIp = "192.168.37.94";  // Adresa IP a serverului curent
+    private String currentServerIp = "192.168.37.141";  // Adresa IP a serverului curent
 
 
     public CommandLineInterface() {
         try {
+
             //  Adaugă adresa IP și portul serverului în constructorul DictionaryClient
             //client = new DictionaryClient("192.168.31.10", 1099);
             client = new DictionaryClient(currentServerIp, 1099);
@@ -35,6 +38,14 @@ public class CommandLineInterface {
             } catch (UnknownHostException e) {
                 e.printStackTrace();
             }
+
+            // Inițializează clientul cu adresa IP și portul serverului curent
+            initializeClient(currentServerIp);
+
+            // Pornește firul de execuție pentru verificarea continuă a stării serverului
+            Thread serverCheckThread = new Thread(new ServerCheckTask());
+            serverCheckThread.start();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -44,7 +55,59 @@ public class CommandLineInterface {
 //        Thread nodeDisplayThread = new Thread(new NodeDisplayTask());
         //   nodeDisplayThread.start();
     }
+    // Adaugă această metodă pentru a inițializa clientul și a actualiza serverul în client
+    private void initializeClient(String serverIp) {
+        client = new DictionaryClient(serverIp, 1099);
+        client.updateServer(serverIp);
+    }
 
+    // Adaugă această clasă pentru a defini firul de execuție care verifică continuu starea serverului
+    private class ServerCheckTask implements Runnable {
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    // Verifică starea serverului la fiecare secundă și comută dacă este necesar
+                    Thread.sleep(1000);
+                    switchServerIfNecessary();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    private class ServerCheckThread extends Thread {
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    // Verifică starea serverului curent la fiecare secundă
+                    Thread.sleep(1000); // Așteaptă 1 secundă între verificări
+                    switchServerIfNecessary();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    private void switchServerIfNecessary() {
+        boolean serverResponding = checkServerStatus(currentServerIp);
+
+        if (!serverResponding) {
+            switchServer();
+        }
+    }
+    private boolean checkServerStatus(String serverIp) {
+        try {
+            int port = 1099;
+            InetAddress serverAddress = InetAddress.getByName(serverIp);
+            Socket socket = new Socket(serverAddress, port);
+            socket.close();
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
 
 
 
@@ -63,15 +126,22 @@ public class CommandLineInterface {
             }
         }
     }
-    private void switchServer() {
-        // Actualizează adresa IP a serverului curent (poate fi extins pentru a detecta serverul disponibil)
-        currentServerIp = "192.168.1.17";
-        System.out.println("Switching to server: " + currentServerIp);
+//    private void switchServer() {
+//        // Actualizează adresa IP a serverului curent (poate fi extins pentru a detecta serverul disponibil)
+//        currentServerIp = "192.168.1.5";
+//        System.out.println("Switching to server: " + currentServerIp);
+//
+//        // Actualizează clientul cu noua adresă IP a serverului
+//        client.updateServer(currentServerIp);
+//    }
+private void switchServer() {
+    // Actualizează adresa IP a serverului curent (poate fi extins pentru a detecta serverul disponibil)
+    currentServerIp = "192.168.1.5";
+    System.out.println("Switching to server: " + currentServerIp);
 
-        // Actualizează clientul cu noua adresă IP a serverului
-        client.updateServer(currentServerIp);
-    }
-
+    // Actualizează clientul cu noua adresă IP a serverului
+    client.updateServer(currentServerIp);
+}
 
     private void displayNodes() {
         System.out.println("Current Nodes: " + nodes);

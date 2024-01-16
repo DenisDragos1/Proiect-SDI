@@ -21,46 +21,86 @@ import java.util.Map;
 public class ServiceSetup {
 
     /**
-     * Entry point for service application.
+     * Entry point for the service application.
+     *
      * @param args
      * @throws Exception
      */
+    public static void main(String[] args) {
+        String[] serverIps = {"192.168.37.141", "192.168.1.5"};
+        int port = 1099;
 
-    public static void main(String[] args) throws Exception {
+        // Construiește URL-ul pentru serviciu pentru primul server
+        String serviceURL = "rmi://" + serverIps[0] + ":" + port + "/dictionaryService";
 
-        // Adresa IP și portul serverului RMI
-        String serverIp = "192.168.37.94";   // Adresa IP a serverului
-        int port = 1099; // Portul serverului RMI
+        // Înregistrează serviciul pe primul server
+        registerService(serverIps[0], port, serviceURL);
 
-        // Construiește URL-ul pentru serviciu
-        String serviceURL = "rmi://" + serverIp + ":" + port + "/dictionaryService";
+        // Așteaptă înregistrarea nodurilor pe primul server
+        waitForNodeRegistration(serviceURL);
 
-        Map<String, String> dictionary = parseDictionary();
-
-        // Crează o instanță a serviciului DictionaryService.
-        DictionaryService ds = new DictionaryServiceImpl(dictionary);
-
-        // Porniți registry RMI la portul specificat.
-        LocateRegistry.createRegistry(port);
-
-        // Înregistrați obiectul remote în registry.
-        Naming.rebind(serviceURL, ds);
-        displayConnectedNodes(ds);
-        System.out.println("Service is ready at: " + serviceURL);
+        // În cazul în care primul server pica, trece automat la al doilea server
+        switchServerIfNecessary(serverIps, port, serviceURL);
     }
 
-    private static void waitForNodeRegistration(DictionaryService ds) {
-        // Așteaptă înregistrarea nodurilor la server
-        System.out.println("Waiting for nodes to register...");
+    private static void registerService(String serverIp, int port, String serviceURL) {
         try {
+            // Crează o instanță a serviciului DictionaryService.
+            DictionaryService ds = new DictionaryServiceImpl(parseDictionary());
+
+            // Pornește registry RMI la portul specificat.
+            LocateRegistry.createRegistry(port);
+
+            // Înregistrează obiectul remote în registry.
+            Naming.rebind(serviceURL, ds);
+            displayConnectedNodes(ds);
+            System.out.println("Service is ready at: " + serviceURL);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void waitForNodeRegistration(String serviceURL) {
+        try {
+            // Așteaptă înregistrarea nodurilor la server
+            System.out.println("Waiting for nodes to register...");
+            DictionaryService ds = (DictionaryService) Naming.lookup(serviceURL);
             while (ds.getConnectedNodes().isEmpty()) {
                 Thread.sleep(1000); // așteaptă 1 secundă și verifică din nou
             }
             System.out.println("Nodes registered: " + ds.getConnectedNodes());
-        } catch (RemoteException | InterruptedException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+    private static void switchServerIfNecessary(String[] serverIps, int port, String serviceURL) {
+        boolean isFirstServerAlive = checkServerStatus(serverIps[0], port);
+
+        // Dacă primul server nu este activ, trece la al doilea server
+        if (!isFirstServerAlive) {
+            System.out.println("Switching to the second server...");
+            // Construiește URL-ul pentru serviciu pentru al doilea server
+            String secondServiceURL = "rmi://" + serverIps[1] + ":" + port + "/dictionaryService";
+
+            // Înregistrează serviciul pe al doilea server
+            registerService(serverIps[1], port, secondServiceURL);
+
+            // Așteaptă înregistrarea nodurilor pe al doilea server
+            waitForNodeRegistration(secondServiceURL);
+        }
+    }
+
+    private static boolean checkServerStatus(String serverIp, int port) {
+        try {
+            Registry registry = LocateRegistry.getRegistry(serverIp, port);
+            registry.list(); // Încearcă să listeze obiectele pentru a verifica starea serverului
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     // Adaugă această metodă în ServiceSetup
     private static void displayConnectedNodes(DictionaryService ds) {
         try {
@@ -72,18 +112,13 @@ public class ServiceSetup {
         }
     }
 
-
-
-
-
-
     /*
      * Parse the dictionary file, which is in TXT format, to a Map.
      */
     private static Map<String, String> parseDictionary() throws Exception {
         InputStream in = ServiceSetup.class.getResourceAsStream("/dictionary.txt");
         Map<String, String> dictionary = new HashMap<String, String>();
-        BufferedReader br = new BufferedReader(new InputStreamReader (in));
+        BufferedReader br = new BufferedReader(new InputStreamReader(in));
 
         String line = null;
         String word = null;
